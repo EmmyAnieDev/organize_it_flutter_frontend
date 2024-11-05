@@ -1,24 +1,26 @@
 class User {
-  final int id;
+  final int? id;
   final String name;
   final String email;
   final String? password;
-  final DateTime createdAt;
+  final DateTime? createdAt;
 
   User({
-    required this.id,
+    this.id,
     required this.name,
     required this.email,
     this.password,
-    required this.createdAt,
+    this.createdAt,
   });
 
-  static User fromJson(Map<String, dynamic> json) {
+  factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'],
-      name: json['name'],
-      email: json['email'],
-      createdAt: DateTime.parse(json['created_at']),
+      id: json['id'] as int?,
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'])
+          : null,
     );
   }
 
@@ -27,7 +29,7 @@ class User {
       'id': id,
       'name': name,
       'email': email,
-      'created_at': createdAt.toIso8601String(),
+      'created_at': createdAt?.toIso8601String(),
     };
 
     if (includePassword && password != null) {

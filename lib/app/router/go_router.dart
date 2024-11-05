@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:organizer_it/presentation/screens/landing_page/landing_page.dart';
 
 import '../../presentation/screens/auth/sign_in.dart';
 import '../../presentation/screens/auth/sign_up.dart';
@@ -12,6 +13,10 @@ final GoRouter router = GoRouter(
   routes: [
     GoRoute(
       path: '/',
+      builder: (context, state) => const LandingPage(),
+    ),
+    GoRoute(
+      path: '/task-screen',
       builder: (context, state) => const TaskScreen(),
     ),
     GoRoute(

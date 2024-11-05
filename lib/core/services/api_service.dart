@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../app/config/api_config.dart';
+import 'api_exception.dart';
 
 class ApiService {
   static const String _baseUrl = Api.baseURL;
@@ -59,20 +60,34 @@ class ApiService {
 
   // Helper function to process HTTP responses
   static dynamic _processResponse(http.Response response) {
-    switch (response.statusCode) {
-      case 200:
-      case 201:
-        return jsonDecode(response.body); // Successful response
-      case 400:
-        throw Exception('Bad request: ${response.body}');
-      case 401:
-        throw Exception('Unauthorized: ${response.body}');
-      case 404:
-        throw Exception('Not found: ${response.body}');
-      case 500:
-        throw Exception('Server error: ${response.body}');
-      default:
-        throw Exception('Unexpected error: ${response.body}');
+    final body = response.body;
+
+    try {
+      final dynamic decodedResponse = jsonDecode(body);
+
+      switch (response.statusCode) {
+        case 200:
+        case 201:
+          return decodedResponse;
+        case 400:
+          throw ApiException(decodedResponse['error'] ?? 'Bad request',
+              statusCode: 400);
+        case 401:
+          throw ApiException(decodedResponse['error'] ?? 'Unauthorized',
+              statusCode: 401);
+        case 404:
+          throw ApiException(decodedResponse['error'] ?? 'Not found',
+              statusCode: 404);
+        case 500:
+          throw ApiException(decodedResponse['error'] ?? 'Server error',
+              statusCode: 500);
+        default:
+          throw ApiException(decodedResponse['error'] ?? 'Unexpected error',
+              statusCode: response.statusCode);
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to process response: ${e.toString()}');
     }
   }
 }
