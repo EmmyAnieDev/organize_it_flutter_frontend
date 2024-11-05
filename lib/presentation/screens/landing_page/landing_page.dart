@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:organizer_it/app/router/go_router.dart';
+import 'package:organizer_it/data/providers/user_controller.dart';
 
 import '../../../app/constant/colors.dart';
 import '../../widgets/landing_page_gradient_line.dart';
 
-class LandingPage extends StatelessWidget {
+class LandingPage extends ConsumerWidget {
   const LandingPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ucp = ref.watch(userProvider);
+
     return Scaffold(
       body: Stack(
         children: [
@@ -94,7 +98,11 @@ class LandingPage extends StatelessWidget {
                               color: AppColors.black,
                               borderRadius: BorderRadius.circular(50)),
                           child: IconButton(
-                            onPressed: () => router.push("/sign-in"),
+                            onPressed: () {
+                              ucp.currentUser != null
+                                  ? router.push("/task-screen")
+                                  : router.push("/sign-in");
+                            },
                             icon: const Icon(
                               Icons.arrow_forward,
                               color: AppColors.white,

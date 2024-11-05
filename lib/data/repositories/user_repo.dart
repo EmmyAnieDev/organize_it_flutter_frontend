@@ -85,9 +85,28 @@ class UserRepository {
   }
 
   static Future<void> logoutUser() async {
-    // If your backend has a logout endpoint
-    await ApiService.postRequest('users/logout', {});
-    // Perform any local logout actions here, such as clearing local tokens
+    try {
+      // Retrieve the refresh token from secure storage
+      final refreshToken = await _storage.read(key: 'refresh_token');
+
+      if (refreshToken == null) {
+        throw ApiException('No refresh token found');
+      }
+
+      // Send the refresh token in the request payload
+      await ApiService.postRequest('logout.php', {
+        'token': refreshToken,
+      });
+
+      // Clear tokens from FlutterSecureStorage
+      await _storage.delete(key: 'access_token');
+      await _storage.delete(key: 'refresh_token');
+
+      print("Access and refresh tokens cleared.");
+    } catch (e) {
+      print('Logout failed: ${e.toString()}');
+      throw ApiException('Logout failed: ${e.toString()}');
+    }
   }
 
   static Future<User> getUserById(int userId) async {

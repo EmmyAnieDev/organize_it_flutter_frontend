@@ -5,6 +5,7 @@ import '../../../app/constant/colors.dart';
 import '../../widgets/edit_profile_button.dart';
 import '../../widgets/profile_text_field.dart';
 import '../../widgets/save_button.dart';
+import 'components/logout_button.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -40,7 +41,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
+      body: Padding(
+        padding: const EdgeInsets.only(bottom: 20),
         child: Column(
           children: [
             const SizedBox(height: 40),
@@ -102,6 +104,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
             ),
+            const Spacer(),
+            LogoutButton()
           ],
         ),
       ),
