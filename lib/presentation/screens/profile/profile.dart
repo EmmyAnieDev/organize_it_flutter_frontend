@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:organizer_it/data/providers/user_controller.dart';
 
 import '../../../app/constant/colors.dart';
 import '../../widgets/edit_profile_button.dart';
@@ -7,26 +9,31 @@ import '../../widgets/profile_text_field.dart';
 import '../../widgets/save_button.dart';
 import 'components/logout_button.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  final nameController = TextEditingController(text: 'John Doe');
-  final emailController = TextEditingController(text: 'john.doe@example.com');
-
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
-  void dispose() {
-    nameController.dispose();
-    emailController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ucp = ref.read(userProvider);
+      final currentUser = ucp.currentUser;
+      if (currentUser != null) {
+        ucp.nameController.text = currentUser.name;
+        ucp.emailController.text = currentUser.email;
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final ucp = ref.watch(userProvider);
+
     return Scaffold(
       backgroundColor: AppColors.white,
       appBar: AppBar(
@@ -39,74 +46,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
             fontSize: 30,
           ),
         ),
-        centerTitle: true,
+        actions: const [LogoutButton()],
       ),
-      body: Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Column(
-          children: [
-            const SizedBox(height: 40),
-            Center(
-              child: Stack(
-                children: [
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 4,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.3),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: const Offset(0, 3),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Column(
+            children: [
+              const SizedBox(height: 40),
+              Center(
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 4,
                         ),
-                      ],
-                    ),
-                    child: ClipOval(
-                      child: Image.network(
-                        'https://ui-avatars.com/api/?name=John+Doe&size=120',
-                        fit: BoxFit.cover,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: Image.network(
+                          'https://ui-avatars.com/api/?name=John+Doe&size=120',
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: EditProfileButton(
-                      onImageSelected: (file) {},
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: EditProfileButton(
+                        onImageSelected: (file) {},
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            ProfileTextField(
-              nameController: nameController,
-              labelText: 'Full Name',
-            ),
-            const SizedBox(height: 16),
-            ProfileTextField(
-              nameController: emailController,
-              labelText: 'Email',
-            ),
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: SaveButton(
-                label: 'Save Changes',
-                onPress: () {
-                  Navigator.of(context).pop();
-                },
+              const SizedBox(height: 24),
+              ProfileTextField(
+                nameController: ucp.nameController,
+                labelText: 'Name',
               ),
-            ),
-            const Spacer(),
-            LogoutButton()
-          ],
+              const SizedBox(height: 16),
+              ProfileTextField(
+                nameController: ucp.emailController,
+                labelText: 'Email',
+              ),
+              const SizedBox(height: 16),
+              ProfileTextField(
+                nameController: ucp.passwordController,
+                labelText: 'Password',
+              ),
+              const SizedBox(height: 24),
+              if (ucp.isLoading)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 24),
+                  child: CircularProgressIndicator(color: AppColors.black),
+                ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: SaveButton(
+                  label: 'Save Changes',
+                  onPress: () => ucp.updateUserProfile(context),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

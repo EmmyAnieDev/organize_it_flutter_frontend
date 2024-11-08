@@ -28,20 +28,6 @@ class UserController extends ChangeNotifier {
     _loadUserFromPreferences();
   }
 
-  Future<void> _loadUserFromPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userData = prefs.getString('currentUser');
-    if (userData != null) {
-      _currentUser = User.fromJson(jsonDecode(userData));
-      notifyListeners();
-    }
-  }
-
-  Future<void> _saveUserToPreferences(User user) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('currentUser', jsonEncode(user.toJson()));
-  }
-
   Future<void> registerUser(BuildContext context) async {
     if (_isLoading) return;
 
@@ -57,7 +43,7 @@ class UserController extends ChangeNotifier {
 
       // Register the user and receive user data
       final userData = await UserRepository.registerUser(newUser);
-      print(userData);
+      print('User data from api $userData');
 
       // Set the registered user as the current user
       _currentUser = User.fromJson(userData);
@@ -135,6 +121,21 @@ class UserController extends ChangeNotifier {
     }
   }
 
+  Future<void> _saveUserToPreferences(User user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('currentUser', jsonEncode(user.toJson()));
+  }
+
+  Future<void> _loadUserFromPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userData = prefs.getString('currentUser');
+    print('User data from shared Preferences $userData');
+    if (userData != null) {
+      _currentUser = User.fromJson(jsonDecode(userData));
+      notifyListeners();
+    }
+  }
+
   Future<void> logoutUser(BuildContext context) async {
     try {
       await UserRepository.logoutUser();
@@ -153,6 +154,54 @@ class UserController extends ChangeNotifier {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Logout failed: ${e.toString()}')),
       );
+    }
+  }
+
+  Future<void> updateUserProfile(BuildContext context) async {
+    if (_isLoading || _currentUser == null) return;
+
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      // Create updated user object with current user's ID
+      final updatedUser = User(
+        id: _currentUser!.id,
+        name: nameController.text,
+        email: emailController.text,
+        password:
+            passwordController.text.isNotEmpty ? passwordController.text : null,
+      );
+
+      final updatedUserData = await UserRepository.updateUser(updatedUser);
+      print("Updated User Data: $updatedUserData");
+
+      _currentUser = User.fromJson(updatedUserData);
+      await _saveUserToPreferences(_currentUser!);
+
+      await Future.delayed(const Duration(seconds: 5));
+      passwordController.clear();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully!')),
+      );
+
+      Navigator.of(context).pop();
+    } catch (e) {
+      String errorMessage = 'Update failed: ';
+      if (e is ApiException) {
+        errorMessage += e.message;
+      } else {
+        errorMessage += e.toString();
+      }
+
+      print(errorMessage);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 

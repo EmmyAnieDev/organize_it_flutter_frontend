@@ -67,19 +67,11 @@ class LogoutButton extends ConsumerWidget {
           },
         );
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-        decoration: BoxDecoration(
+      child: const Padding(
+        padding: EdgeInsets.only(right: 10),
+        child: Icon(
+          Icons.logout_sharp,
           color: Colors.red,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          'Logout',
-          style: GoogleFonts.salsa(
-            color: Colors.white,
-            fontWeight: FontWeight.w500,
-            fontSize: 20,
-          ),
         ),
       ),
     );

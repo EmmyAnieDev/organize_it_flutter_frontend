@@ -86,39 +86,69 @@ class UserRepository {
 
   static Future<void> logoutUser() async {
     try {
-      // Retrieve the refresh token from secure storage
       final refreshToken = await _storage.read(key: 'refresh_token');
 
-      if (refreshToken == null) {
-        throw ApiException('No refresh token found');
-      }
-
-      // Send the refresh token in the request payload
-      await ApiService.postRequest('logout.php', {
-        'token': refreshToken,
-      });
-
-      // Clear tokens from FlutterSecureStorage
       await _storage.delete(key: 'access_token');
       await _storage.delete(key: 'refresh_token');
+      print("Access and refresh tokens cleared locally.");
 
-      print("Access and refresh tokens cleared.");
+      // Only attempt the server logout if there's a refresh token
+      if (refreshToken != null) {
+        try {
+          // Send the refresh token in the request payload
+          await ApiService.postRequest('logout.php', {
+            'token': refreshToken,
+          });
+
+          print("Server logout successful.");
+        } catch (e) {
+          print(
+              "Server logout failed (likely due to expired token): ${e.toString()}");
+        }
+      } else {
+        print("No refresh token found. Local logout complete.");
+      }
     } catch (e) {
       print('Logout failed: ${e.toString()}');
       throw ApiException('Logout failed: ${e.toString()}');
     }
   }
 
-  static Future<User> getUserById(int userId) async {
-    final response = await ApiService.getRequest('users/$userId');
-    return User.fromJson(response);
-  }
+  static Future<Map<String, dynamic>> updateUser(User user) async {
+    try {
+      // Create the payload with required fields
+      final Map<String, dynamic> payload = {
+        'id': user.id,
+        'name': user.name,
+        'email': user.email,
+      };
 
-  static Future<void> updateUser(User user) async {
-    await ApiService.putRequest('users/${user.id}', user.toJson());
-  }
+      if (user.password != null && user.password!.isNotEmpty) {
+        payload['password'] = user.password;
+      }
 
-  static Future<void> deleteUser(int userId) async {
-    await ApiService.deleteRequest('users/$userId');
+      final response = await ApiService.putRequest('update_user.php', payload);
+
+      if (response == null || response.isEmpty) {
+        throw ApiException('No response from server');
+      }
+
+      if (response is Map<String, dynamic>) {
+        if (response.containsKey('error')) {
+          throw ApiException(response['error']);
+        }
+
+        if (response['status'] != 'success') {
+          throw ApiException('Failed to update profile');
+        }
+
+        return response['user'];
+      } else {
+        throw ApiException('Invalid response format from server');
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Update failed: ${e.toString()}');
+    }
   }
 }
