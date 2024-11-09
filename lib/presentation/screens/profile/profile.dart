@@ -8,6 +8,7 @@ import '../../widgets/edit_profile_button.dart';
 import '../../widgets/profile_text_field.dart';
 import '../../widgets/save_button.dart';
 import 'components/logout_button.dart';
+import 'components/profile_photo.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -57,36 +58,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Center(
                 child: Stack(
                   children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 4,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.3),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: Image.network(
-                          'https://ui-avatars.com/api/?name=John+Doe&size=120',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
+                    ProfilePhoto(),
                     Positioned(
                       bottom: 0,
                       right: 0,
                       child: EditProfileButton(
-                        onImageSelected: (file) {},
+                        onImageSelected: (file) =>
+                            ucp.selectAndUploadPhoto(context),
                       ),
                     ),
                   ],

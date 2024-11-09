@@ -3,6 +3,7 @@ class User {
   final String name;
   final String email;
   final String? password;
+  final String? profilePhoto;
   final DateTime? createdAt;
 
   User({
@@ -10,6 +11,7 @@ class User {
     required this.name,
     required this.email,
     this.password,
+    this.profilePhoto,
     this.createdAt,
   });
 
@@ -18,6 +20,7 @@ class User {
       id: json['id'] as int?,
       name: json['name'] ?? '',
       email: json['email'] ?? '',
+      profilePhoto: json['profile_photo'] ?? '',
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'])
           : null,
@@ -29,6 +32,7 @@ class User {
       'id': id,
       'name': name,
       'email': email,
+      'profile_photo': profilePhoto,
       'created_at': createdAt?.toIso8601String(),
     };
 

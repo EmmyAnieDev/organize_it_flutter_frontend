@@ -32,6 +32,7 @@ class UserRepository {
             'name': userData['name'],
             'email': userData['email'],
             'created_at': userData['created_at'],
+            'profile_photo': userData['profile_photo']
           };
         } else {
           throw ApiException('Invalid user data format');
@@ -149,6 +150,37 @@ class UserRepository {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException('Update failed: ${e.toString()}');
+    }
+  }
+
+  static Future<String> uploadUserPhoto(int? userId, String base64Image) async {
+    try {
+      final response = await ApiService.postRequest(
+        'update_photo.php',
+        {
+          'user_id': userId,
+          'profile_photo': base64Image,
+        },
+      );
+
+      if (response is Map<String, dynamic>) {
+        if (response.containsKey('error')) {
+          throw ApiException(response['error']);
+        }
+
+        if (response['status'] != 'success') {
+          throw ApiException('Failed to upload profile photo');
+        }
+
+        // Return just the profile photo URL instead of the entire user object
+        final userData = response['user'] as Map<String, dynamic>;
+        return userData['profile_photo'] as String;
+      } else {
+        throw ApiException('Invalid response format from server');
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Photo upload failed: ${e.toString()}');
     }
   }
 }

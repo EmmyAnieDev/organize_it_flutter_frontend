@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/services/api_exception.dart';
@@ -16,6 +18,11 @@ final userProvider = ChangeNotifierProvider<UserController>((ref) {
 class UserController extends ChangeNotifier {
   User? _currentUser;
   User? get currentUser => _currentUser;
+
+  final ImagePicker _picker = ImagePicker();
+
+  bool _isPhotoLoading = false;
+  bool get isPhotoLoading => _isPhotoLoading;
 
   final emailController = TextEditingController();
   final nameController = TextEditingController();
@@ -202,6 +209,87 @@ class UserController extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> uploadProfilePhoto(BuildContext context, File file) async {
+    if (_isLoading || _currentUser == null) return;
+
+    try {
+      _isLoading = true;
+      _isPhotoLoading = true;
+      notifyListeners();
+
+      // Convert image to base64
+      final bytes = await file.readAsBytes();
+      final base64Image = base64Encode(bytes);
+      final imageData = "data:image/jpeg;base64,$base64Image";
+
+      // Upload photo and get the new photo URL
+      final newPhotoUrl = await UserRepository.uploadUserPhoto(
+        _currentUser!.id,
+        imageData,
+      );
+
+      // Create a new User object with all existing data plus the new photo URL
+      _currentUser = User(
+        id: _currentUser!.id,
+        name: _currentUser!.name,
+        email: _currentUser!.email,
+        profilePhoto: newPhotoUrl,
+        createdAt: _currentUser!.createdAt,
+      );
+
+      // Clear existing preferences and save updated user data
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('currentUser');
+      await _saveUserToPreferences(_currentUser!);
+
+      // Force a rebuild of the UI
+      notifyListeners();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile photo updated successfully!')),
+      );
+    } catch (e) {
+      String errorMessage = 'Photo upload failed: ';
+      if (e is ApiException) {
+        errorMessage += e.message;
+      } else {
+        errorMessage += e.toString();
+      }
+
+      print(errorMessage);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
+    } finally {
+      _isLoading = false;
+      _isPhotoLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> debugPrintCurrentPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userData = prefs.getString('currentUser');
+    print('Current data in preferences: $userData');
+  }
+
+  Future<void> selectAndUploadPhoto(BuildContext context) async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      print('Selected file path: ${pickedFile.path}');
+      final file = File(pickedFile.path);
+
+      // Print file size and exists
+      print('File exists: ${await file.exists()}');
+      print('File size: ${await file.length()} bytes');
+
+      await debugPrintCurrentPreferences(); // Print current preferences
+      await uploadProfilePhoto(context, file);
+      await debugPrintCurrentPreferences(); // Print updated preferences
     }
   }
 
