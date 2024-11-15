@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 import 'category_model.dart';
 import 'user_model.dart';
 
@@ -24,15 +26,17 @@ class Task {
 
   factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
-      id: json['id'],
-      name: json['name'],
-      createdAt: DateTime.parse(json['created_at']),
-      dateToStartTask: DateTime.parse(json['date_to_start_task']),
-      dateToEndTask: DateTime.parse(json['date_to_end_task']),
-      user: User.fromJson(json['user']),
+      id: json['id'] ?? 0,
+      name: json['name'] ?? 'Unnamed Task',
+      createdAt: DateTime.tryParse(json['created_at']) ?? DateTime.now(),
+      dateToStartTask: DateFormat('yyyy-MM-dd')
+          .parse(json['start_date'] ?? DateTime.now().toIso8601String()),
+      dateToEndTask: DateFormat('yyyy-MM-dd')
+          .parse(json['end_date'] ?? DateTime.now().toIso8601String()),
+      user: User.fromJson(json['user'] ?? {}),
       category:
           json['category'] != null ? Category.fromJson(json['category']) : null,
-      isCompleted: json['is_completed'] ?? false,
+      isCompleted: json['is_completed'] == 1,
     );
   }
 
@@ -41,8 +45,8 @@ class Task {
       'id': id,
       'name': name,
       'created_at': createdAt.toIso8601String(),
-      'date_to_start_task': dateToStartTask.toIso8601String(),
-      'date_to_end_task': dateToEndTask.toIso8601String(),
+      'start_date': DateFormat('yyyy-MM-dd').format(dateToStartTask),
+      'end_date': DateFormat('yyyy-MM-dd').format(dateToEndTask),
       'user': user.toJson(),
       'category': category?.toJson(),
       'is_completed': isCompleted,

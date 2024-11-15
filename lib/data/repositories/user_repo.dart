@@ -85,6 +85,16 @@ class UserRepository {
     print("Refresh Token: $refreshToken");
   }
 
+  // Retrieve access token
+  static Future<String?> retrieveAccessToken() async {
+    return await _storage.read(key: 'access_token');
+  }
+
+  // Retrieve refresh token
+  static Future<String?> retrieveRefreshToken() async {
+    return await _storage.read(key: 'refresh_token');
+  }
+
   static Future<void> logoutUser() async {
     try {
       final refreshToken = await _storage.read(key: 'refresh_token');

@@ -1,76 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../app/constant/colors.dart';
+import '../../../data/providers/task_controller.dart';
 import '../../widgets/filter_buttons.dart';
 import '../../widgets/search_text_field.dart';
 import '../../widgets/task_card.dart';
 import 'components/custom_appbar.dart';
 import 'components/todays_overview.dart';
 
-class TaskScreen extends StatefulWidget {
+class TaskScreen extends ConsumerStatefulWidget {
   const TaskScreen({super.key});
 
   @override
-  _TaskScreenState createState() => _TaskScreenState();
+  ConsumerState<TaskScreen> createState() => _TaskScreenState();
 }
 
-class _TaskScreenState extends State<TaskScreen> {
-  String? _selectedCategory;
-  String? _selectedStatus;
-  DateTime? _selectedDate;
+class _TaskScreenState extends ConsumerState<TaskScreen> {
+  @override
+  void initState() {
+    super.initState();
 
-  final List<Map<String, String>> tasks = [
-    {
-      "title": "Task 1",
-      "category": "Work",
-      "dueDate": "2024-11-02",
-      "status": "Completed"
-    },
-    {
-      "title": "Task 2",
-      "category": "Personal",
-      "dueDate": "2024-11-03",
-      "status": "Pending"
-    },
-    {
-      "title": "Task 3",
-      "category": "Work",
-      "dueDate": "2024-11-04",
-      "status": "In Progress"
-    },
-  ];
-
-  List<Map<String, String>> get filteredTasks {
-    if (_selectedCategory == null) {
-      return tasks;
-    }
-    return tasks
-        .where((task) => task["category"] == _selectedCategory)
-        .toList();
-  }
-
-  void _selectCategory(String category) {
-    setState(() {
-      _selectedCategory = category;
-    });
-  }
-
-  void _selectStatus(String status) {
-    setState(() {
-      _selectedStatus = status;
-    });
-  }
-
-  void _selectDate(DateTime date) {
-    setState(() {
-      _selectedDate = date;
+    // Fetch tasks when the screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(taskProvider).fetchTasks().then((_) {
+        final tasks = ref.read(taskProvider).tasks;
+        print("Fetched Tasks: $tasks");
+      }).catchError((error) {
+        print("Error fetching tasks: $error");
+      });
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final taskController = ref.watch(taskProvider);
+    final tasks = taskController.filteredTasks;
+
     return Scaffold(
       backgroundColor: AppColors.white,
       body: SafeArea(
@@ -86,75 +54,96 @@ class _TaskScreenState extends State<TaskScreen> {
                 ],
               ),
             ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
-                children: [
-                  const TodaysOverview(),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Filter By',
-                        style: GoogleFonts.salsa(
-                          color: AppColors.black,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 18,
+            taskController.isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      children: [
+                        const TodaysOverview(),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Filter By',
+                              style: GoogleFonts.salsa(
+                                color: AppColors.black,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 15),
+                            const Icon(Icons.filter_list_rounded),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 15),
-                      const Icon(Icons.filter_list_rounded)
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      FilterButtons(
-                        label: 'Categories',
-                        filterType: FilterType.category,
-                        onTap: () => _selectCategory("Work"),
-                      ),
-                      FilterButtons(
-                        label: 'Date',
-                        icon: Icons.calendar_month,
-                        filterType: FilterType.date,
-                        onTap: () => _selectDate(DateTime.now()),
-                      ),
-                      FilterButtons(
-                        label: 'Status',
-                        filterType: FilterType.status,
-                        onTap: () => _selectStatus("Completed"),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 5),
-                  if (_selectedCategory != null ||
-                      _selectedStatus != null ||
-                      _selectedDate != null)
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedCategory = null;
-                          _selectedStatus = null;
-                          _selectedDate = null;
-                        });
-                      },
-                      child: const Text(
-                        "Clear Filters",
-                        style: TextStyle(color: Colors.blue),
-                      ),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            FilterButtons(
+                              label: 'Categories',
+                              filterType: FilterType.category,
+                              onTap: () =>
+                                  taskController.setCategoryFilter("Work"),
+                            ),
+                            FilterButtons(
+                              label: 'Date',
+                              icon: Icons.calendar_month,
+                              filterType: FilterType.date,
+                              onTap: () =>
+                                  taskController.setDateFilter(DateTime.now()),
+                            ),
+                            FilterButtons(
+                              label: 'Status',
+                              filterType: FilterType.status,
+                              onTap: () =>
+                                  taskController.setStatusFilter("Completed"),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        if (taskController.hasFilters)
+                          TextButton(
+                            onPressed: taskController.clearFilters,
+                            child: const Text(
+                              "Clear Filters",
+                              style: TextStyle(color: Colors.blue),
+                            ),
+                          ),
+                        tasks.isEmpty
+                            ? Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 50),
+                                  child: Text(
+                                    'No tasks available',
+                                    style: GoogleFonts.salsa(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.grey,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Column(
+                                children: tasks
+                                    .map((task) => TaskCard(
+                                          title: task.name,
+                                          category: task.category?.toString() ??
+                                              'Uncategorized',
+                                          dueDate: task.dateToStartTask,
+                                          endDate: task.dateToEndTask,
+                                          status: task.isCompleted
+                                              ? 'Completed'
+                                              : 'Pending',
+                                        ))
+                                    .toList(),
+                              ),
+                      ],
                     ),
-                  ...filteredTasks.map((task) => TaskCard(
-                        title: task["title"]!,
-                        category: task["category"]!,
-                        dueDate: task["dueDate"]!,
-                        status: task["status"]!,
-                      )),
-                ],
-              ),
-            ),
+                  ),
           ],
         ),
       ),

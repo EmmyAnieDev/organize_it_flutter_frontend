@@ -127,6 +127,7 @@ class FilterButtons extends StatelessWidget {
               Icon(
                 icon,
                 color: AppColors.white,
+                size: 18,
               )
             ],
           ],
