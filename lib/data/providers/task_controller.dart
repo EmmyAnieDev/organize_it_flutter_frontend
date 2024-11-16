@@ -1,27 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/validators.dart';
 import '../models/task_model.dart';
 import '../repositories/task_repo.dart';
 import '../repositories/user_repo.dart';
 
-final taskProvider = ChangeNotifierProvider<TaskController>((ref) {
-  return TaskController();
-});
-
 class TaskController extends ChangeNotifier {
-  List<Task> _tasks = [];
-  List<Task> get tasks => _tasks;
+  // Form-related controllers and state variables
+  final formKey = GlobalKey<FormState>();
+  final taskNameController = TextEditingController();
+  final categoryController = TextEditingController();
 
+  // Task date-related state
+  DateTime? _startDate;
+  DateTime? _endDate;
+
+  // Loading and error state
+  bool _isLoading = false;
+  String? _errorMessage;
   String? _selectedCategory;
   String? _selectedStatus;
   DateTime? _selectedDate;
 
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
+  // Task list
+  List<Task> _tasks = [];
+  List<Task> get tasks => _tasks;
 
-  String? _errorMessage;
+  bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+
+  DateTime? get startDate => _startDate;
+  DateTime? get endDate => _endDate;
 
   bool get hasFilters =>
       _selectedCategory != null ||
@@ -46,15 +56,33 @@ class TaskController extends ChangeNotifier {
     }
     if (_selectedDate != null) {
       filtered = filtered.where((task) {
-        return task.dateToEndTask == _selectedDate;
+        return task.endDate == _selectedDate;
       }).toList();
     }
     return filtered;
   }
 
-  Future<void> fetchTasks() async {
-    _isLoading = true;
-    notifyListeners();
+  // Methods to handle date selection from the UI
+  Future<void> selectDate(BuildContext context, bool isStartDate) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null) {
+      if (isStartDate) {
+        _startDate = picked;
+      } else {
+        _endDate = picked;
+      }
+      notifyListeners();
+    }
+  }
+
+  //  --------     Fetch task method for the Controller  -------- >
+  Future<void> fetchTasks(WidgetRef ref) async {
+    _setLoadingState(true);
 
     try {
       final accessToken = await UserRepository.retrieveAccessToken();
@@ -68,15 +96,56 @@ class TaskController extends ChangeNotifier {
       }
 
       _tasks = fetchedTasks;
+      notifyListeners();
     } catch (e) {
       _errorMessage = "Failed to fetch tasks: ${e.toString()}";
       print(_errorMessage);
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setLoadingState(false);
     }
   }
 
+  //  --------     Create task function for the Controller  -------- >
+  Future<bool> createTask(BuildContext context, WidgetRef ref) async {
+    final dateError = validateDates(_startDate, _endDate);
+
+    if (formKey.currentState!.validate() && dateError == null) {
+      _setLoadingState(true);
+
+      try {
+        final accessToken = await UserRepository.retrieveAccessToken();
+        if (accessToken == null || accessToken.isEmpty) {
+          throw Exception("No access token found. User not logged in.");
+        }
+
+        final newTask = Task(
+          name: taskNameController.text.trim(),
+          startDate: _startDate!,
+          endDate: _endDate!,
+        );
+
+        await TaskRepository.addTask(newTask, accessToken);
+
+        // After the task is successfully added, fetch tasks again
+        await fetchTasks(ref);
+
+        Navigator.pop(context);
+        return true;
+      } catch (e) {
+        _errorMessage = "Failed to create task: ${e.toString()}";
+        print(_errorMessage);
+        return false;
+      } finally {
+        _setLoadingState(false);
+      }
+    } else {
+      _errorMessage = dateError ?? "Please fill out all fields correctly.";
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Methods for task filtering
   void setCategoryFilter(String category) {
     _selectedCategory = category;
     notifyListeners();
@@ -99,8 +168,21 @@ class TaskController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Helper method to update loading state
   void _setLoadingState(bool isLoading) {
     _isLoading = isLoading;
     notifyListeners();
   }
+
+  // Dispose controllers when no longer needed
+  @override
+  void dispose() {
+    taskNameController.dispose();
+    categoryController.dispose();
+    super.dispose();
+  }
 }
+
+final taskProvider = ChangeNotifierProvider<TaskController>((ref) {
+  return TaskController();
+});

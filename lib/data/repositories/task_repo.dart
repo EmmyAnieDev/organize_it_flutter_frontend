@@ -33,7 +33,16 @@ class TaskRepository {
   }
 
   static Future<void> addTask(Task task, String token) async {
-    await ApiService.postRequest('tasks', task.toJson(), token: token);
+    try {
+      final response =
+          await ApiService.postRequest('tasks', task.toJson(), token: token);
+      if (response == null || response.isEmpty) {
+        throw Exception("Failed to add task.");
+      }
+    } catch (e) {
+      print("Error adding task: $e");
+      rethrow;
+    }
   }
 
   static Future<void> updateTask(Task task, String token) async {

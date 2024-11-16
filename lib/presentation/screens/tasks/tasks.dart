@@ -25,7 +25,7 @@ class _TaskScreenState extends ConsumerState<TaskScreen> {
 
     // Fetch tasks when the screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(taskProvider).fetchTasks().then((_) {
+      ref.read(taskProvider).fetchTasks(ref).then((_) {
         final tasks = ref.read(taskProvider).tasks;
         print("Fetched Tasks: $tasks");
       }).catchError((error) {
@@ -36,8 +36,8 @@ class _TaskScreenState extends ConsumerState<TaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final taskController = ref.watch(taskProvider);
-    final tasks = taskController.filteredTasks;
+    final tp = ref.watch(taskProvider);
+    final tasks = tp.filteredTasks;
 
     return Scaffold(
       backgroundColor: AppColors.white,
@@ -54,7 +54,7 @@ class _TaskScreenState extends ConsumerState<TaskScreen> {
                 ],
               ),
             ),
-            taskController.isLoading
+            tp.isLoading
                 ? const Center(
                     child: CircularProgressIndicator(),
                   )
@@ -86,28 +86,25 @@ class _TaskScreenState extends ConsumerState<TaskScreen> {
                             FilterButtons(
                               label: 'Categories',
                               filterType: FilterType.category,
-                              onTap: () =>
-                                  taskController.setCategoryFilter("Work"),
+                              onTap: () => tp.setCategoryFilter("Work"),
                             ),
                             FilterButtons(
                               label: 'Date',
                               icon: Icons.calendar_month,
                               filterType: FilterType.date,
-                              onTap: () =>
-                                  taskController.setDateFilter(DateTime.now()),
+                              onTap: () => tp.setDateFilter(DateTime.now()),
                             ),
                             FilterButtons(
                               label: 'Status',
                               filterType: FilterType.status,
-                              onTap: () =>
-                                  taskController.setStatusFilter("Completed"),
+                              onTap: () => tp.setStatusFilter("Completed"),
                             ),
                           ],
                         ),
                         const SizedBox(height: 5),
-                        if (taskController.hasFilters)
+                        if (tp.hasFilters)
                           TextButton(
-                            onPressed: taskController.clearFilters,
+                            onPressed: tp.clearFilters,
                             child: const Text(
                               "Clear Filters",
                               style: TextStyle(color: Colors.blue),
@@ -133,8 +130,8 @@ class _TaskScreenState extends ConsumerState<TaskScreen> {
                                           title: task.name,
                                           category: task.category?.toString() ??
                                               'Uncategorized',
-                                          dueDate: task.dateToStartTask,
-                                          endDate: task.dateToEndTask,
+                                          dueDate: task.startDate,
+                                          endDate: task.endDate,
                                           status: task.isCompleted
                                               ? 'Completed'
                                               : 'Pending',

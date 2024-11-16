@@ -1,63 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../app/constant/colors.dart';
 import '../../../core/utils/validators.dart';
+import '../../../data/providers/task_controller.dart';
 import '../../widgets/save_button.dart';
 
-class AddTaskScreen extends StatefulWidget {
+class AddTaskScreen extends ConsumerWidget {
   const AddTaskScreen({super.key});
 
   @override
-  _AddTaskScreenState createState() => _AddTaskScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tp = ref.watch(taskProvider);
 
-class _AddTaskScreenState extends State<AddTaskScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _taskNameController = TextEditingController();
-  final _categoryController = TextEditingController();
-  DateTime? _startDate;
-  DateTime? _endDate;
-
-  Future<void> _selectDate(BuildContext context, bool isStartDate) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null) {
-      setState(() {
-        if (isStartDate) {
-          _startDate = picked;
-        } else {
-          _endDate = picked;
-        }
-      });
-    }
-  }
-
-  void _submitForm() {
-    final dateError = validateDates(_startDate, _endDate);
-    if (_formKey.currentState!.validate() && dateError == null) {
-      // If all fields are valid, submit the form
-      Navigator.pop(context);
-    } else {
-      // If date validation fails, show an error message
-      setState(() {});
-    }
-  }
-
-  @override
-  void dispose() {
-    _taskNameController.dispose();
-    _categoryController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.white,
       appBar: AppBar(
@@ -75,11 +32,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
-          key: _formKey,
+          key: tp.formKey,
           child: ListView(
             children: [
               TextFormField(
-                controller: _taskNameController,
+                controller: tp.taskNameController,
                 decoration: const InputDecoration(
                   labelText: 'Task Name',
                   border: OutlineInputBorder(),
@@ -90,35 +47,35 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ListTile(
                 title: const Text('Start Date'),
                 subtitle: Text(
-                  _startDate == null
+                  tp.startDate == null
                       ? 'Select start date'
-                      : DateFormat.yMMMd().format(_startDate!),
+                      : DateFormat.yMMMd().format(tp.startDate!),
                 ),
                 trailing: const Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context, true),
+                onTap: () => tp.selectDate(context, true),
               ),
               const SizedBox(height: 16.0),
               ListTile(
                 title: const Text('End Date'),
                 subtitle: Text(
-                  _endDate == null
+                  tp.endDate == null
                       ? 'Select end date'
-                      : DateFormat.yMMMd().format(_endDate!),
+                      : DateFormat.yMMMd().format(tp.endDate!),
                 ),
                 trailing: const Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context, false),
+                onTap: () => tp.selectDate(context, false),
               ),
-              if (validateDates(_startDate, _endDate) != null)
+              if (validateDates(tp.startDate, tp.endDate) != null)
                 Padding(
                   padding: const EdgeInsets.only(left: 16.0, top: 4.0),
                   child: Text(
-                    validateDates(_startDate, _endDate)!,
+                    validateDates(tp.startDate, tp.endDate)!,
                     style: const TextStyle(color: Colors.red),
                   ),
                 ),
               const SizedBox(height: 16.0),
               TextFormField(
-                controller: _categoryController,
+                controller: tp.categoryController,
                 decoration: const InputDecoration(
                   labelText: 'Category (optional)',
                   border: OutlineInputBorder(),
@@ -127,7 +84,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               const SizedBox(height: 24.0),
               SaveButton(
                 label: 'Add Task',
-                onPress: _submitForm,
+                onPress: () => tp.createTask(context, ref),
+                isLoading: tp.isLoading,
               ),
             ],
           ),
