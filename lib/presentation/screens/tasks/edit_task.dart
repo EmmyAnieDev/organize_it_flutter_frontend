@@ -1,62 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../app/constant/colors.dart';
 import '../../../core/utils/validators.dart';
+import '../../../data/providers/task_controller.dart';
 import '../../widgets/save_button.dart';
 
-class EditTaskScreen extends StatefulWidget {
-  const EditTaskScreen({super.key});
+class EditTaskScreen extends ConsumerStatefulWidget {
+  final int taskId;
+
+  const EditTaskScreen({
+    super.key,
+    required this.taskId,
+  });
 
   @override
-  _EditTaskScreenState createState() => _EditTaskScreenState();
+  ConsumerState<EditTaskScreen> createState() => _EditTaskScreenState();
 }
 
-class _EditTaskScreenState extends State<EditTaskScreen> {
-  final _taskNameController = TextEditingController();
-  final _categoryController = TextEditingController();
-  DateTime? _startDate;
-  DateTime? _endDate;
-
-  Future<void> _selectDate(BuildContext context, bool isStartDate) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null) {
-      setState(() {
-        if (isStartDate) {
-          _startDate = picked;
-        } else {
-          _endDate = picked;
-        }
-      });
-    }
-  }
-
-  void _submitForm() {
-    final dateError = validateSelectedDate(_startDate, _endDate);
-    if (dateError == null) {
-      // If date validation passes, submit the form
-      Navigator.pop(context);
-    } else {
-      // If date validation fails, show an error message
-      setState(() {});
-    }
-  }
-
+class _EditTaskScreenState extends ConsumerState<EditTaskScreen> {
   @override
-  void dispose() {
-    _taskNameController.dispose();
-    _categoryController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+
+    // Fetch task details when screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(taskProvider).loadTaskDetails(widget.taskId);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final tp = ref.watch(taskProvider);
+
     return Scaffold(
       backgroundColor: AppColors.white,
       appBar: AppBar(
@@ -71,69 +49,70 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: [
-            TextFormField(
-              controller: _taskNameController,
-              decoration: const InputDecoration(
-                labelText: 'Task Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16.0),
-            ListTile(
-              title: const Text('Start Date'),
-              subtitle: Text(
-                _startDate == null
-                    ? 'Select start date'
-                    : DateFormat.yMMMd().format(_startDate!),
-              ),
-              trailing: const Icon(Icons.calendar_today),
-              onTap: () {
-                FocusScope.of(context).unfocus();
-                _selectDate(context, true);
-              },
-            ),
-            const SizedBox(height: 16.0),
-            ListTile(
-              title: const Text('End Date'),
-              subtitle: Text(
-                _endDate == null
-                    ? 'Select end date'
-                    : DateFormat.yMMMd().format(_endDate!),
-              ),
-              trailing: const Icon(Icons.calendar_today),
-              onTap: () {
-                FocusScope.of(context).unfocus();
-                _selectDate(context, false);
-              },
-            ),
-            if (validateSelectedDate(_startDate, _endDate) != null)
-              Padding(
-                padding: const EdgeInsets.only(left: 16.0, top: 4.0),
-                child: Text(
-                  validateSelectedDate(_startDate, _endDate)!,
-                  style: const TextStyle(color: Colors.red),
+      body: tp.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: tp.formKey,
+                child: ListView(
+                  children: [
+                    TextFormField(
+                      controller: tp.taskNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Task Name',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: validateTaskName,
+                    ),
+                    const SizedBox(height: 16.0),
+                    ListTile(
+                      title: const Text('Start Date'),
+                      subtitle: Text(
+                        tp.startDate == null
+                            ? 'Select start date'
+                            : DateFormat.yMMMd().format(tp.startDate!),
+                      ),
+                      trailing: const Icon(Icons.calendar_today),
+                      onTap: () => tp.selectDate(context, true),
+                    ),
+                    const SizedBox(height: 16.0),
+                    ListTile(
+                      title: const Text('End Date'),
+                      subtitle: Text(
+                        tp.endDate == null
+                            ? 'Select end date'
+                            : DateFormat.yMMMd().format(tp.endDate!),
+                      ),
+                      trailing: const Icon(Icons.calendar_today),
+                      onTap: () => tp.selectDate(context, false),
+                    ),
+                    if (validateDates(tp.startDate, tp.endDate) != null)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16.0, top: 4.0),
+                        child: Text(
+                          validateDates(tp.startDate, tp.endDate)!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      controller: tp.categoryController,
+                      decoration: const InputDecoration(
+                        labelText: 'Category (optional)',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 24.0),
+                    SaveButton(
+                      label: 'Save Changes',
+                      onPress: () {},
+                      isLoading: tp.isLoading,
+                    ),
+                  ],
                 ),
               ),
-            const SizedBox(height: 16.0),
-            TextFormField(
-              controller: _categoryController,
-              decoration: const InputDecoration(
-                labelText: 'Category (optional)',
-                border: OutlineInputBorder(),
-              ),
             ),
-            const SizedBox(height: 24.0),
-            SaveButton(
-              label: 'Save Changes',
-              onPress: _submitForm,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

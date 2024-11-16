@@ -27,15 +27,29 @@ class TaskRepository {
     }
   }
 
-  static Future<Task> getTaskById(int taskId, String token) async {
-    final response = await ApiService.getRequest('tasks/$taskId', token: token);
-    return Task.fromJson(response);
+  static Future<Task?> getTaskById(int taskId, String token) async {
+    try {
+      final response =
+          await ApiService.getRequest('tasks/$taskId', token: token);
+
+      if (response == null || response.isEmpty) {
+        print("No task found for ID: $taskId");
+        return null;
+      }
+
+      // Parse the response into a Task model
+      return Task.fromJson(response);
+    } catch (e) {
+      print("Error fetching task by ID: $e");
+      rethrow;
+    }
   }
 
   static Future<void> addTask(Task task, String token) async {
     try {
       final response =
           await ApiService.postRequest('tasks', task.toJson(), token: token);
+
       if (response == null || response.isEmpty) {
         throw Exception("Failed to add task.");
       }
@@ -43,11 +57,6 @@ class TaskRepository {
       print("Error adding task: $e");
       rethrow;
     }
-  }
-
-  static Future<void> updateTask(Task task, String token) async {
-    await ApiService.putRequest('tasks/${task.id}', task.toJson(),
-        token: token);
   }
 
   static Future<void> deleteTask(int taskId, String token) async {

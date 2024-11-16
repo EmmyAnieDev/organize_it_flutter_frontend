@@ -7,6 +7,7 @@ import '../../app/constant/colors.dart';
 import 'edit_delete_task_button.dart';
 
 class TaskCard extends StatelessWidget {
+  final int taskId;
   final String title;
   final String category;
   final DateTime dueDate;
@@ -20,6 +21,7 @@ class TaskCard extends StatelessWidget {
     required this.dueDate,
     required this.status,
     required this.endDate,
+    required this.taskId,
   });
 
   @override
@@ -74,7 +76,7 @@ class TaskCard extends StatelessWidget {
                 const Spacer(),
                 EditDeleteTaskButton(
                   icon: Icons.edit_note_outlined,
-                  onTap: () => context.push('/edit-task'),
+                  onTap: () => context.push('/edit-task/$taskId'),
                   color: Colors.blue,
                 ),
                 const SizedBox(width: 15),

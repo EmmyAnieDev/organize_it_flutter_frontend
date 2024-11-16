@@ -135,6 +135,7 @@ class _TaskScreenState extends ConsumerState<TaskScreen> {
                                           status: task.isCompleted
                                               ? 'Completed'
                                               : 'Pending',
+                                          taskId: task.id!,
                                         ))
                                     .toList(),
                               ),

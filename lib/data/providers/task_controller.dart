@@ -62,24 +62,6 @@ class TaskController extends ChangeNotifier {
     return filtered;
   }
 
-  // Methods to handle date selection from the UI
-  Future<void> selectDate(BuildContext context, bool isStartDate) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null) {
-      if (isStartDate) {
-        _startDate = picked;
-      } else {
-        _endDate = picked;
-      }
-      notifyListeners();
-    }
-  }
-
   //  --------     Fetch task method for the Controller  -------- >
   Future<void> fetchTasks(WidgetRef ref) async {
     _setLoadingState(true);
@@ -105,7 +87,36 @@ class TaskController extends ChangeNotifier {
     }
   }
 
-  //  --------     Create task function for the Controller  -------- >
+  //  --------     Get task by ID method for the Controller  -------- >
+  Future<Task?> getTaskById(int taskId) async {
+    _setLoadingState(true);
+
+    try {
+      final accessToken = await UserRepository.retrieveAccessToken();
+      if (accessToken == null || accessToken.isEmpty) {
+        throw Exception("No access token found. User not logged in.");
+      }
+
+      // Fetch task by its ID from the repository
+      final task = await TaskRepository.getTaskById(taskId, accessToken);
+
+      if (task != null) {
+        return task;
+      } else {
+        _errorMessage = "Task not found";
+        notifyListeners();
+        return null;
+      }
+    } catch (e) {
+      _errorMessage = "Failed to fetch task by ID: ${e.toString()}";
+      print(_errorMessage);
+      return null;
+    } finally {
+      _setLoadingState(false);
+    }
+  }
+
+  //  --------     Create task method for the Controller  -------- >
   Future<bool> createTask(BuildContext context, WidgetRef ref) async {
     final dateError = validateDates(_startDate, _endDate);
 
@@ -142,6 +153,46 @@ class TaskController extends ChangeNotifier {
       _errorMessage = dateError ?? "Please fill out all fields correctly.";
       notifyListeners();
       return false;
+    }
+  }
+
+  // Methods to handle date selection from the UI
+  Future<void> selectDate(BuildContext context, bool isStartDate) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null) {
+      if (isStartDate) {
+        _startDate = picked;
+      } else {
+        _endDate = picked;
+      }
+      notifyListeners();
+    }
+  }
+
+  // Asynchronous method designed to load details of a task based on the provided taskId
+  Future<void> loadTaskDetails(int taskId) async {
+    _setLoadingState(true);
+
+    try {
+      final id = taskId;
+      final task = await getTaskById(id);
+
+      if (task != null) {
+        taskNameController.text = task.name;
+        _startDate = task.startDate;
+        _endDate = task.endDate;
+        notifyListeners();
+      }
+    } catch (e) {
+      _errorMessage = "Failed to load task details: ${e.toString()}";
+      print(_errorMessage);
+    } finally {
+      _setLoadingState(false);
     }
   }
 

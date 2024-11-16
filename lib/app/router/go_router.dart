@@ -36,8 +36,10 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const AddTaskScreen(),
     ),
     GoRoute(
-      path: '/edit-task',
-      builder: (context, state) => const EditTaskScreen(),
+      path: '/edit-task/:taskId',
+      builder: (context, state) => EditTaskScreen(
+        taskId: int.parse(state.pathParameters['taskId']!),
+      ),
     ),
   ],
 );
