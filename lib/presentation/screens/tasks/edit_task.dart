@@ -106,7 +106,7 @@ class _EditTaskScreenState extends ConsumerState<EditTaskScreen> {
                     const SizedBox(height: 24.0),
                     SaveButton(
                       label: 'Save Changes',
-                      onPress: () {},
+                      onPress: () => tp.updateTask(context, widget.taskId, ref),
                       isLoading: tp.isLoading,
                     ),
                   ],

@@ -59,6 +59,26 @@ class TaskRepository {
     }
   }
 
+  static Future<void> updateTask(Task task, String token) async {
+    try {
+      final response = await ApiService.putRequest(
+        'tasks/${task.id}',
+        task.toJson(),
+        token: token,
+      );
+
+      if (response == null || response.isEmpty) {
+        print("Task updated successfully with no content returned.");
+        return;
+      }
+
+      print("Response: $response");
+    } catch (e) {
+      print("Error updating task: $e");
+      rethrow;
+    }
+  }
+
   static Future<void> deleteTask(int taskId, String token) async {
     await ApiService.deleteRequest('tasks/$taskId', token: token);
   }

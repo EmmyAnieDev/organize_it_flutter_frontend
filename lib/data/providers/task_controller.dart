@@ -156,6 +156,50 @@ class TaskController extends ChangeNotifier {
     }
   }
 
+  //  --------     update task method for the Controller  -------- >
+  Future<bool> updateTask(
+      BuildContext context, int taskId, WidgetRef ref) async {
+    final dateError = validateDates(_startDate, _endDate);
+
+    print(_endDate);
+
+    if (formKey.currentState!.validate() && dateError == null) {
+      _setLoadingState(true);
+
+      try {
+        final accessToken = await UserRepository.retrieveAccessToken();
+        if (accessToken == null || accessToken.isEmpty) {
+          throw Exception("No access token found. User not logged in.");
+        }
+
+        final updatedTask = Task(
+          id: taskId,
+          name: taskNameController.text.trim(),
+          startDate: _startDate!,
+          endDate: _endDate!,
+        );
+
+        await TaskRepository.updateTask(updatedTask, accessToken);
+
+        // Refresh the task list
+        await fetchTasks(ref);
+
+        Navigator.pop(context);
+        return true;
+      } catch (e) {
+        _errorMessage = "Failed to update task: ${e.toString()}";
+        print(_errorMessage);
+        return false;
+      } finally {
+        _setLoadingState(false);
+      }
+    } else {
+      _errorMessage = dateError ?? "Please fill out all fields correctly.";
+      notifyListeners();
+      return false;
+    }
+  }
+
   // Methods to handle date selection from the UI
   Future<void> selectDate(BuildContext context, bool isStartDate) async {
     final DateTime? picked = await showDatePicker(
