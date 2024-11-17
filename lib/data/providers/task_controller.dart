@@ -45,22 +45,28 @@ class TaskController extends ChangeNotifier {
 
   String _searchQuery = '';
 
+  // Update the filteredTasks getter
   List<Task> get filteredTasks {
     var filtered = _tasks;
 
-    // Apply search filter
+    // Apply search filter for both name and category
     if (_searchQuery.isNotEmpty) {
-      filtered = filtered
-          .where((task) =>
-              task.name.toLowerCase().contains(_searchQuery.toLowerCase()))
-          .toList();
+      final query = _searchQuery.toLowerCase();
+      filtered = filtered.where((task) {
+        final nameMatch = task.name.toLowerCase().contains(query);
+        final categoryMatch =
+            task.category?.toLowerCase().contains(query) ?? false;
+        return nameMatch || categoryMatch;
+      }).toList();
     }
 
+    // Apply category filter
     if (_selectedCategory != null) {
       filtered =
           filtered.where((task) => task.category == _selectedCategory).toList();
     }
 
+    // Apply status filter
     if (_selectedStatus != null) {
       filtered = filtered.where((task) {
         if (_selectedStatus == 'Completed') {
@@ -72,6 +78,7 @@ class TaskController extends ChangeNotifier {
       }).toList();
     }
 
+    // Apply date filter
     if (_selectedDate != null) {
       filtered = filtered.where((task) {
         return task.endDate == _selectedDate;
@@ -97,7 +104,7 @@ class TaskController extends ChangeNotifier {
       }
 
       _tasks = fetchedTasks;
-      _updateCategories();
+      refreshCategorySet();
       notifyListeners();
     } catch (e) {
       _errorMessage = "Failed to fetch tasks: ${e.toString()}";
@@ -199,6 +206,7 @@ class TaskController extends ChangeNotifier {
           name: taskNameController.text.trim(),
           startDate: _startDate!,
           endDate: _endDate!,
+          category: categoryController.text.trim(),
         );
 
         await TaskRepository.updateTask(updatedTask, accessToken);
@@ -207,6 +215,8 @@ class TaskController extends ChangeNotifier {
         await fetchTasks(ref);
 
         Navigator.pop(context);
+        clearControllers();
+
         return true;
       } catch (e) {
         _errorMessage = "Failed to update task: ${e.toString()}";
@@ -250,8 +260,8 @@ class TaskController extends ChangeNotifier {
     }
   }
 
-  // Method to update categories based on tasks
-  void _updateCategories() {
+// Method to refresh the set of unique categories from the task list
+  void refreshCategorySet() {
     _categories.clear();
     for (Task task in _tasks) {
       if (task.category != null && task.category!.isNotEmpty) {
@@ -290,6 +300,7 @@ class TaskController extends ChangeNotifier {
         taskNameController.text = task.name;
         _startDate = task.startDate;
         _endDate = task.endDate;
+        categoryController.text = task.category!;
         notifyListeners();
       }
     } catch (e) {

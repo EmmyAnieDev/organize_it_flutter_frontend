@@ -62,6 +62,7 @@ class TaskRepository {
 
   static Future<void> updateTask(Task task, String token) async {
     try {
+      print("Sending updated task data: ${task.toJson()}");
       final response = await ApiService.putRequest(
         'tasks/${task.id}',
         task.toJson(),

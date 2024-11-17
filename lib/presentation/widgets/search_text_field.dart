@@ -29,7 +29,7 @@ class SearchTextField extends ConsumerWidget {
         decoration: InputDecoration(
           contentPadding:
               const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-          hintText: 'Search tasks...',
+          hintText: 'Search by task name or category...',
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(30),
             borderSide: BorderSide.none,
