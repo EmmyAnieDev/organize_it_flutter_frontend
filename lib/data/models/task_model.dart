@@ -1,14 +1,12 @@
 import 'package:intl/intl.dart';
 
-import 'category_model.dart';
-
 class Task {
   final int? id;
   final String name;
   final DateTime? createdAt;
   final DateTime startDate;
   final DateTime endDate;
-  final Category? category;
+  final String? category;
   final bool isCompleted;
 
   Task({
@@ -32,19 +30,24 @@ class Task {
           .parse(json['start_date'] ?? DateTime.now().toIso8601String()),
       endDate: DateFormat('yyyy-MM-dd')
           .parse(json['end_date'] ?? DateTime.now().toIso8601String()),
-      category:
-          json['category'] != null ? Category.fromJson(json['category']) : null,
+      category: json['category_name']?.toString(),
       isCompleted: json['is_completed'] == 1,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final map = {
       'name': name,
+      'is_completed': isCompleted ? 1 : 0,
       'start_date': DateFormat('yyyy-MM-dd').format(startDate),
       'end_date': DateFormat('yyyy-MM-dd').format(endDate),
-      'category': category?.toJson(),
-      'is_completed': isCompleted,
     };
+
+    // Only add category_id if it's not null or empty
+    if (category != null && category!.isNotEmpty) {
+      map['category'] = category.toString();
+    }
+
+    return map;
   }
 }

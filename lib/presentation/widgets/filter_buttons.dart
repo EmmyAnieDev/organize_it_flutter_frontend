@@ -25,7 +25,7 @@ class FilterButtons extends ConsumerWidget {
 
     switch (filterType) {
       case FilterType.category:
-        _showCategoryDropdown(context, offset, button.size);
+        _showCategoryDropdown(context, ref, offset, button.size);
         break;
       case FilterType.status:
         _showStatusDropdown(context, ref, offset, button.size);
@@ -36,8 +36,10 @@ class FilterButtons extends ConsumerWidget {
     }
   }
 
-  void _showCategoryDropdown(BuildContext context, Offset offset, Size size) {
-    final categories = ['Work', 'Personal', 'Shopping', 'Health', 'Study'];
+  void _showCategoryDropdown(
+      BuildContext context, WidgetRef ref, Offset offset, Size size) {
+    final categories = ref.watch(
+        taskProvider.select((controller) => controller.categories.toList()));
 
     showMenu<String>(
       context: context,
@@ -58,7 +60,7 @@ class FilterButtons extends ConsumerWidget {
       }).toList(),
     ).then((String? selectedCategory) {
       if (selectedCategory != null) {
-        onTap();
+        ref.read(taskProvider.notifier).setCategoryFilter(selectedCategory);
       }
     });
   }

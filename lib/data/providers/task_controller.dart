@@ -20,6 +20,10 @@ class TaskController extends ChangeNotifier {
   DateTime? get startDate => _startDate;
   DateTime? get endDate => _endDate;
 
+  // list to store unique categories from tasks
+  final Set<String> _categories = {};
+  Set<String> get categories => _categories;
+
   // Loading and error state
   bool _isLoading = false;
   String? _errorMessage;
@@ -93,6 +97,7 @@ class TaskController extends ChangeNotifier {
       }
 
       _tasks = fetchedTasks;
+      _updateCategories();
       notifyListeners();
     } catch (e) {
       _errorMessage = "Failed to fetch tasks: ${e.toString()}";
@@ -145,10 +150,10 @@ class TaskController extends ChangeNotifier {
         }
 
         final newTask = Task(
-          name: taskNameController.text.trim(),
-          startDate: _startDate!,
-          endDate: _endDate!,
-        );
+            name: taskNameController.text.trim(),
+            startDate: _startDate!,
+            endDate: _endDate!,
+            category: categoryController.text.trim());
 
         await TaskRepository.addTask(newTask, accessToken);
 
@@ -242,6 +247,16 @@ class TaskController extends ChangeNotifier {
       return false;
     } finally {
       _setLoadingState(false);
+    }
+  }
+
+  // Method to update categories based on tasks
+  void _updateCategories() {
+    _categories.clear();
+    for (Task task in _tasks) {
+      if (task.category != null && task.category!.isNotEmpty) {
+        _categories.add(task.category!);
+      }
     }
   }
 
