@@ -11,6 +11,8 @@ class ProfilePhoto extends ConsumerWidget {
     final ucp = ref.watch(userProvider);
     final photoUrl = ucp.currentUser?.profilePhoto;
 
+    print('Photo URL: $photoUrl');
+
     return Container(
       width: 120,
       height: 120,

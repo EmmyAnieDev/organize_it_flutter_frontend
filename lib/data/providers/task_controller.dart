@@ -38,6 +38,12 @@ class TaskController extends ChangeNotifier {
   List<Task> _tasks = [];
   List<Task> get tasks => _tasks;
 
+  // Add selection related properties
+  final Set<int> _selectedTasks = {};
+  Set<int> get selectedTasks => _selectedTasks;
+
+  bool isTaskSelected(int taskId) => _selectedTasks.contains(taskId);
+
   bool get hasFilters =>
       _selectedCategory != null ||
       _selectedStatus != null ||
@@ -258,6 +264,57 @@ class TaskController extends ChangeNotifier {
     } finally {
       _setLoadingState(false);
     }
+  }
+
+  //-----------  Method to complete multiple tasks   --------->
+  Future<void> completeSelectedTasks(WidgetRef ref) async {
+    _setLoadingState(true);
+
+    try {
+      final accessToken = await UserRepository.retrieveAccessToken();
+      if (accessToken == null || accessToken.isEmpty) {
+        throw Exception("No access token found. User not logged in.");
+      }
+
+      for (final taskId in _selectedTasks) {
+        final task = _tasks.firstWhere((t) => t.id == taskId);
+        final updatedTask = Task(
+          id: taskId,
+          name: task.name,
+          startDate: task.startDate,
+          endDate: task.endDate,
+          category: task.category,
+          isCompleted: true,
+        );
+
+        await TaskRepository.updateTask(updatedTask, accessToken);
+      }
+
+      // Refresh tasks after completing
+      await fetchTasks(ref);
+
+      clearSelection();
+    } catch (e) {
+      _errorMessage = "Failed to complete tasks: ${e.toString()}";
+      print(_errorMessage);
+    } finally {
+      _setLoadingState(false);
+    }
+  }
+
+  // select task checkbox functionality
+  void toggleTaskSelection(int taskId) {
+    if (_selectedTasks.contains(taskId)) {
+      _selectedTasks.remove(taskId);
+    } else {
+      _selectedTasks.add(taskId);
+    }
+    notifyListeners();
+  }
+
+  void clearSelection() {
+    _selectedTasks.clear();
+    notifyListeners();
   }
 
 // Method to refresh the set of unique categories from the task list

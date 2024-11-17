@@ -58,7 +58,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Center(
                 child: Stack(
                   children: [
-                    ProfilePhoto(),
+                    const ProfilePhoto(),
                     Positioned(
                       bottom: 0,
                       right: 0,

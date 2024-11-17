@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../app/constant/colors.dart';
+import '../../data/providers/task_controller.dart';
 import '../screens/tasks/components/delete_dilaog.dart';
 import 'edit_delete_task_button.dart';
 
-class TaskCard extends StatelessWidget {
+class TaskCard extends ConsumerWidget {
   final int taskId;
   final String title;
   final String category;
@@ -26,7 +28,10 @@ class TaskCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tp = ref.watch(taskProvider);
+    final isSelected = tp.isTaskSelected(taskId);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
@@ -62,6 +67,13 @@ class TaskCard extends StatelessWidget {
             const SizedBox(height: 5),
             Row(
               children: [
+                Checkbox(
+                  value: isSelected,
+                  onChanged: (bool? value) {
+                    tp.toggleTaskSelection(taskId);
+                  },
+                ),
+                SizedBox(width: 10),
                 Icon(
                   Icons.circle,
                   color: status == "Completed" ? Colors.green : Colors.orange,

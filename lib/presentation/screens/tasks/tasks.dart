@@ -8,6 +8,7 @@ import '../../../data/providers/task_controller.dart';
 import '../../widgets/filter_buttons.dart';
 import '../../widgets/search_text_field.dart';
 import '../../widgets/task_card.dart';
+import 'components/complete_button.dart';
 import 'components/custom_appbar.dart';
 import 'components/todays_overview.dart';
 
@@ -42,106 +43,118 @@ class _TaskScreenState extends ConsumerState<TaskScreen> {
     return Scaffold(
       backgroundColor: AppColors.white,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 20),
-              child: Column(
-                children: [
-                  CustomAppBar(),
-                  SizedBox(height: 10),
-                  SearchTextField(),
-                ],
-              ),
-            ),
-            tp.isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(),
-                  )
-                : Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      children: [
-                        const TodaysOverview(),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+            Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+                  child: Column(
+                    children: [
+                      CustomAppBar(),
+                      SizedBox(height: 10),
+                      SearchTextField(),
+                    ],
+                  ),
+                ),
+                tp.isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(),
+                      )
+                    : Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.symmetric(horizontal: 15),
                           children: [
-                            Text(
-                              'Filter By',
-                              style: GoogleFonts.salsa(
-                                color: AppColors.black,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 18,
-                              ),
-                            ),
-                            const SizedBox(width: 15),
-                            const Icon(Icons.filter_list_rounded),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            FilterButtons(
-                              label: 'Categories',
-                              filterType: FilterType.category,
-                              onTap: () => tp.setCategoryFilter("Work"),
-                            ),
-                            FilterButtons(
-                              label: 'Date',
-                              icon: Icons.calendar_month,
-                              filterType: FilterType.date,
-                              onTap: () => tp.setDateFilter(DateTime.now()),
-                            ),
-                            FilterButtons(
-                              label: 'Status',
-                              filterType: FilterType.status,
-                              onTap: () {},
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 5),
-                        if (tp.hasFilters)
-                          TextButton(
-                            onPressed: tp.clearFilters,
-                            child: const Text(
-                              "Clear Filters",
-                              style: TextStyle(color: Colors.blue),
-                            ),
-                          ),
-                        tasks.isEmpty
-                            ? Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(top: 50),
-                                  child: Text(
-                                    'No tasks available',
-                                    style: GoogleFonts.salsa(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.grey,
-                                    ),
+                            const TodaysOverview(),
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Filter By',
+                                  style: GoogleFonts.salsa(
+                                    color: AppColors.black,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 18,
                                   ),
                                 ),
-                              )
-                            : Column(
-                                children: tasks
-                                    .map((task) => TaskCard(
-                                          title: task.name,
-                                          category: task.category?.toString() ??
-                                              'Uncategorized',
-                                          dueDate: task.startDate,
-                                          endDate: task.endDate,
-                                          status: task.isCompleted
-                                              ? 'Completed'
-                                              : 'Pending',
-                                          taskId: task.id!,
-                                        ))
-                                    .toList(),
+                                const SizedBox(width: 15),
+                                const Icon(Icons.filter_list_rounded),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                FilterButtons(
+                                  label: 'Categories',
+                                  filterType: FilterType.category,
+                                  onTap: () => tp.setCategoryFilter("Work"),
+                                ),
+                                FilterButtons(
+                                  label: 'Date',
+                                  icon: Icons.calendar_month,
+                                  filterType: FilterType.date,
+                                  onTap: () => tp.setDateFilter(DateTime.now()),
+                                ),
+                                FilterButtons(
+                                  label: 'Status',
+                                  filterType: FilterType.status,
+                                  onTap: () {},
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 5),
+                            if (tp.hasFilters)
+                              TextButton(
+                                onPressed: tp.clearFilters,
+                                child: const Text(
+                                  "Clear Filters",
+                                  style: TextStyle(color: Colors.blue),
+                                ),
                               ),
-                      ],
-                    ),
-                  ),
+                            tasks.isEmpty
+                                ? Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(top: 50),
+                                      child: Text(
+                                        'No tasks available',
+                                        style: GoogleFonts.salsa(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.grey,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Column(
+                                    children: tasks
+                                        .map((task) => TaskCard(
+                                              title: task.name,
+                                              category:
+                                                  task.category?.toString() ??
+                                                      'Uncategorized',
+                                              dueDate: task.startDate,
+                                              endDate: task.endDate,
+                                              status: task.isCompleted
+                                                  ? 'Completed'
+                                                  : 'Pending',
+                                              taskId: task.id!,
+                                            ))
+                                        .toList(),
+                                  ),
+                          ],
+                        ),
+                      ),
+              ],
+            ),
+            if (tp.selectedTasks.isNotEmpty)
+              const Positioned(
+                bottom: 80,
+                right: 0,
+                left: 0,
+                child: CompleteButton(),
+              ),
           ],
         ),
       ),
