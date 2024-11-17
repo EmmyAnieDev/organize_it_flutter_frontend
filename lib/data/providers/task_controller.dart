@@ -141,6 +141,8 @@ class TaskController extends ChangeNotifier {
         await fetchTasks(ref);
 
         Navigator.pop(context);
+        clearControllers();
+
         return true;
       } catch (e) {
         _errorMessage = "Failed to create task: ${e.toString()}";
@@ -197,6 +199,34 @@ class TaskController extends ChangeNotifier {
       _errorMessage = dateError ?? "Please fill out all fields correctly.";
       notifyListeners();
       return false;
+    }
+  }
+
+  //  --------     delete task method for the Controller  -------- >
+  Future<bool> deleteTask(
+      int taskId, BuildContext context, WidgetRef ref) async {
+    _setLoadingState(true);
+    try {
+      final accessToken = await UserRepository.retrieveAccessToken();
+      if (accessToken == null || accessToken.isEmpty) {
+        throw Exception("No access token found. User not logged in.");
+      }
+
+      bool deleted = await TaskRepository.deleteTask(taskId, accessToken);
+
+      if (deleted) {
+        _tasks.removeWhere((task) => task.id == taskId);
+        notifyListeners();
+        Navigator.pop(context);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _errorMessage = "Failed to delete task: ${e.toString()}";
+      print(_errorMessage);
+      return false;
+    } finally {
+      _setLoadingState(false);
     }
   }
 
@@ -269,12 +299,11 @@ class TaskController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Dispose controllers when no longer needed
-  @override
-  void dispose() {
-    taskNameController.dispose();
-    categoryController.dispose();
-    super.dispose();
+  void clearControllers() {
+    taskNameController.clear();
+    categoryController.clear();
+    _startDate = null;
+    _endDate = null;
   }
 }
 

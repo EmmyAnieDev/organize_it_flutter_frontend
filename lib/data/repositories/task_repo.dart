@@ -79,7 +79,20 @@ class TaskRepository {
     }
   }
 
-  static Future<void> deleteTask(int taskId, String token) async {
-    await ApiService.deleteRequest('tasks/$taskId', token: token);
+  static Future<bool> deleteTask(int taskId, String token) async {
+    try {
+      final response =
+          await ApiService.deleteRequest('tasks/$taskId', token: token);
+      if (response.statusCode == 200) {
+        print("Task deleted successfully.");
+        return true;
+      } else {
+        print("Failed to delete task: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Error deleting task: $e");
+      rethrow;
+    }
   }
 }

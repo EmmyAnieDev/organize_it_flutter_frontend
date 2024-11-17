@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../app/constant/colors.dart';
+import '../screens/tasks/components/delete_dilaog.dart';
 import 'edit_delete_task_button.dart';
 
 class TaskCard extends StatelessWidget {
@@ -86,52 +87,7 @@ class TaskCard extends StatelessWidget {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text(
-                            'Delete Task',
-                            style: GoogleFonts.salsa(
-                              color: AppColors.black,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 25,
-                            ),
-                          ),
-                          content: Text(
-                            'Are you sure you want to delete this task?',
-                            style: GoogleFonts.montserrat(
-                              color: AppColors.black,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 15,
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: Text(
-                                'Cancel',
-                                style: GoogleFonts.salsa(
-                                  color: AppColors.lineColor1,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: Text(
-                                'Delete',
-                                style: GoogleFonts.salsa(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
+                        return DeleteDialog(taskId: taskId);
                       },
                     );
                   },
