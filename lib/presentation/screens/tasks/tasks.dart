@@ -97,7 +97,7 @@ class _TaskScreenState extends ConsumerState<TaskScreen> {
                             FilterButtons(
                               label: 'Status',
                               filterType: FilterType.status,
-                              onTap: () => tp.setStatusFilter("Completed"),
+                              onTap: () {},
                             ),
                           ],
                         ),

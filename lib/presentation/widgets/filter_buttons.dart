@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/constant/colors.dart';
+import '../../data/providers/task_controller.dart';
 
-class FilterButtons extends StatelessWidget {
+class FilterButtons extends ConsumerWidget {
   const FilterButtons({
     super.key,
     required this.label,
@@ -17,7 +19,7 @@ class FilterButtons extends StatelessWidget {
   final VoidCallback onTap;
   final FilterType filterType;
 
-  void _showFilterOptions(BuildContext context) {
+  void _showFilterOptions(BuildContext context, WidgetRef ref) {
     final RenderBox button = context.findRenderObject() as RenderBox;
     final Offset offset = button.localToGlobal(Offset.zero);
 
@@ -26,10 +28,10 @@ class FilterButtons extends StatelessWidget {
         _showCategoryDropdown(context, offset, button.size);
         break;
       case FilterType.status:
-        _showStatusDropdown(context, offset, button.size);
+        _showStatusDropdown(context, ref, offset, button.size);
         break;
       case FilterType.date:
-        _showDatePicker(context);
+        _showDatePicker(context, ref);
         break;
     }
   }
@@ -61,8 +63,10 @@ class FilterButtons extends StatelessWidget {
     });
   }
 
-  void _showStatusDropdown(BuildContext context, Offset offset, Size size) {
+  void _showStatusDropdown(
+      BuildContext context, WidgetRef ref, Offset offset, Size size) {
     final statuses = ['Completed', 'Pending'];
+    final taskController = ref.read(taskProvider);
 
     showMenu<String>(
       context: context,
@@ -83,12 +87,14 @@ class FilterButtons extends StatelessWidget {
       }).toList(),
     ).then((String? selectedStatus) {
       if (selectedStatus != null) {
-        onTap();
+        taskController.setStatusFilter(selectedStatus);
       }
     });
   }
 
-  void _showDatePicker(BuildContext context) {
+  void _showDatePicker(BuildContext context, WidgetRef ref) {
+    final taskController = ref.read(taskProvider);
+
     showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -96,15 +102,15 @@ class FilterButtons extends StatelessWidget {
       lastDate: DateTime(2025),
     ).then((DateTime? selectedDate) {
       if (selectedDate != null) {
-        onTap();
+        taskController.setDateFilter(selectedDate);
       }
     });
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return InkWell(
-      onTap: () => _showFilterOptions(context),
+      onTap: () => _showFilterOptions(context, ref),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
         decoration: BoxDecoration(

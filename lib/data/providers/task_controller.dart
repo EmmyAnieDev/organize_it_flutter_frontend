@@ -11,10 +11,14 @@ class TaskController extends ChangeNotifier {
   final formKey = GlobalKey<FormState>();
   final taskNameController = TextEditingController();
   final categoryController = TextEditingController();
+  final searchController = TextEditingController();
 
   // Task date-related state
   DateTime? _startDate;
   DateTime? _endDate;
+
+  DateTime? get startDate => _startDate;
+  DateTime? get endDate => _endDate;
 
   // Loading and error state
   bool _isLoading = false;
@@ -23,27 +27,36 @@ class TaskController extends ChangeNotifier {
   String? _selectedStatus;
   DateTime? _selectedDate;
 
-  // Task list
-  List<Task> _tasks = [];
-  List<Task> get tasks => _tasks;
-
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  DateTime? get startDate => _startDate;
-  DateTime? get endDate => _endDate;
+  // Task list
+  List<Task> _tasks = [];
+  List<Task> get tasks => _tasks;
 
   bool get hasFilters =>
       _selectedCategory != null ||
       _selectedStatus != null ||
       _selectedDate != null;
 
+  String _searchQuery = '';
+
   List<Task> get filteredTasks {
     var filtered = _tasks;
+
+    // Apply search filter
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered
+          .where((task) =>
+              task.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+          .toList();
+    }
+
     if (_selectedCategory != null) {
       filtered =
           filtered.where((task) => task.category == _selectedCategory).toList();
     }
+
     if (_selectedStatus != null) {
       filtered = filtered.where((task) {
         if (_selectedStatus == 'Completed') {
@@ -54,11 +67,13 @@ class TaskController extends ChangeNotifier {
         return true;
       }).toList();
     }
+
     if (_selectedDate != null) {
       filtered = filtered.where((task) {
         return task.endDate == _selectedDate;
       }).toList();
     }
+
     return filtered;
   }
 
@@ -270,6 +285,17 @@ class TaskController extends ChangeNotifier {
     }
   }
 
+  void setSearchQuery(String query) {
+    _searchQuery = query;
+    notifyListeners();
+  }
+
+  void clearSearch() {
+    searchController.clear();
+    _searchQuery = '';
+    notifyListeners();
+  }
+
   // Methods for task filtering
   void setCategoryFilter(String category) {
     _selectedCategory = category;
@@ -302,6 +328,7 @@ class TaskController extends ChangeNotifier {
   void clearControllers() {
     taskNameController.clear();
     categoryController.clear();
+    clearSearch();
     _startDate = null;
     _endDate = null;
   }
